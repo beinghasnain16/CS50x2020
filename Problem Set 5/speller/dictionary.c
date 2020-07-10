@@ -1,0 +1,135 @@
+// Implements a dictionary's functionality
+#include <stdbool.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
+#include <strings.h>
+#include <stdio.h>
+
+#include "dictionary.h"
+// Represents a node in a hash table
+typedef struct node
+{
+    char word[LENGTH + 1];
+    struct node *next;
+}
+node;
+
+// Number of buckets in hash table
+const unsigned int N = 26;
+
+// Hash table
+node *table[N];
+//Total Words
+unsigned int totalWords = 0;
+
+// Returns true if word is in dictionary else false
+bool check(const char *word)
+{
+    // DONE
+    node *pointer = table[hash(word)];
+
+    //compare words case insensitive
+    if (strcasecmp(pointer->word, word) == 0)
+    {
+        return true;
+    }
+
+    //keep traversing linked list until it finds the word or it finishes
+    while (pointer->next != NULL)
+    {
+        pointer = pointer->next;
+        if (strcasecmp(pointer->word, word) == 0)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// Hashes word to a number
+unsigned int hash(const char *word)
+{
+    //DONE
+    //unicode for small a = 97
+    //one bucket for each letter
+    int n = (int) tolower(word[0]) - 97;
+    return n;
+}
+
+// Loads dictionary into memory, returning true if successful else false
+bool load(const char *dictionary)
+{
+    //DONE
+    // opens the dictionary and initializes temporary space to hold the words
+    FILE *infile = fopen(dictionary, "r");
+    char *dictWord = malloc(LENGTH);
+    if (dictWord == NULL)
+    {
+        return false;
+    }
+
+    // reads file until the end
+    while (fscanf(infile, "%s", dictWord) != EOF)
+    {
+        // allocates memory for a node in which the word will be inserted
+        node *n = malloc(sizeof(node));
+        if (n == NULL)
+        {
+            return false;
+        }
+
+        // copies the word in the chunk of memory allocated and then updates the words count
+        strcpy(n->word, dictWord);
+        totalWords++;
+
+        // set next to point at beginning of list
+        n->next = table[hash(dictWord)];
+
+        // set array to point at n which becomes new beginning of the list
+        table[hash(dictWord)] = n;
+    }
+
+    fclose(infile);
+    free(dictWord);
+    return true;
+}
+
+// Returns number of words in dictionary if loaded else 0 if not yet loaded
+unsigned int size(void)
+{
+    // DONE
+    return totalWords;
+}
+
+// Unloads dictionary from memory, returning true if successful else false
+bool unload(void)
+{
+    //DONE
+    // creates two pointers to traverse the linked list and cancel its element without losing its address
+    node *tmp;
+    node *pointer;
+
+    // repeats for every index in the table
+    for (int i = 0; i < N; i++)
+    {
+        if (table[i] == NULL)
+        {
+            continue;
+        }
+
+        pointer = table[i];
+        tmp = pointer;
+
+        // until the end of the list keeps freeing the memory allocated in load
+        while (pointer->next != NULL)
+        {
+            pointer = pointer->next;
+            free(tmp);
+            tmp = pointer;
+        }
+        free(pointer);
+    }
+    return true;
+}
